@@ -40,12 +40,10 @@ ecobee_df.index = ecobee_df.index.strftime('%m/%d/%Y %H:%M')
 # Perform the merge on the indices, which are now strings and should match
 merged_df = pd.merge(attune_df_5min.reset_index(), ecobee_df.reset_index(), left_on='DateTime', right_on='TIME', how='inner')
 
-# Set 'DateTime' back as index if needed
 merged_df.set_index('DateTime', inplace=True)
 
 # Display the first few rows of the merged dataframe to confirm success
 print(merged_df.head())
-
 
 merged_df.to_csv('attune_ecobee_combo_C.csv')
 # Display the first few rows of the merged dataframe to confirm success
