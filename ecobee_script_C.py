@@ -9,12 +9,13 @@ attune_file_path = 'https://raw.githubusercontent.com/JadenFaste/EcobeeScript/ma
 ecobee_file_path = 'https://raw.githubusercontent.com/JadenFaste/EcobeeScript/main/ECOBEE_5MIN_D.csv'
 
 # Read the data
+units_df = pd.read_csv(attune_file_path, skiprows=1, nrows=1, header=None)
 attune_df = pd.read_csv(attune_file_path, skiprows=[1, 2])
 ecobee_df = pd.read_csv(ecobee_file_path)
 
 # Drop specific columns from attune_df
-cols_to_drop = [col for col in attune_df.columns if col.startswith('C.') or '#C' in col]
-attune_df = attune_df.drop(columns=cols_to_drop)
+attune_df.columns = [f'{col} ({unit})' for col, unit in zip(attune_df.columns, units_df.iloc[0])]
+attune_df = attune_df[~attune_df[attune_df.columns[0]].str.startswith(('D.', '#D'))]
 
 # Prepare Ecobee DataFrame
 ecobee_df['TIME'] = pd.to_datetime(ecobee_df['TIME'])
@@ -39,13 +40,16 @@ merged_df = pd.merge(attune_df.reset_index(), ecobee_df.reset_index(), left_on='
 merged_df.set_index('DateTime', inplace=True)
 
 # Convert merged_df index back to PST
-# Convert 'DateTime' index back to datetime, localize to UTC, convert to PST, and optionally convert back to strin
+# Convert 'DateTime' index back to datetime, localize to UTC, convert to PST, and optionally convert back to string
 merged_df.index = pd.to_datetime(merged_df.index).tz_localize('UTC').tz_convert('America/Los_Angeles')
 merged_df.index = merged_df.index.strftime('%m/%d/%Y %H:%M')
+
+cols_to_drop = merged_df.filter(regex='D\.|#D').columns
+merged_df = merged_df.drop(columns=cols_to_drop)
 
 # Display the first few rows of the merged dataframe to confirm success
 print(merged_df.head())
 
 # Convert to csv
-merged_df.to_csv('test_D6.csv')
+merged_df.to_csv('attune_ecobee_combo_C.csv')
 
